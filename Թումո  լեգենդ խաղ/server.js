@@ -1,4 +1,18 @@
-var matrix = [
+var express = require('express');
+var app = express();
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
+
+app.use(express.static("."));
+
+app.get('/', function (req, res) {
+    res.redirect('index.html');
+});
+server.listen(3000, function(){
+    console.log("connected")
+});
+
+matrix =  [
     [1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0],
@@ -20,17 +34,19 @@ var matrix = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
     [1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 0]
 ];
+io.sockets.emit('send matrix', matrix)
 
+grassArr = [];
+grassEaterArr = [];
+EteArr = [];
+waterArr = [];
 
-var side = 20;
-let grassArr = [];
-let grassEaterArr = [];
-let EteArr = [];
-let waterArr = [];
+Grass = require('./Grass')
+GrassEater = require('./GrassEater')
+Ete = require('./EteArr')
+Water = require('./waterArr');
 
-function setup() {
-    frameRate(6);
-    createCanvas(matrix[0].length * side, matrix.length * side);
+function createObject(matrix){
     for (let y = 0; y < matrix.length; y++) {
         for (let x = 0; x < matrix[y].length; x++) {
             if (matrix[y][x] == 1) {
@@ -46,31 +62,9 @@ function setup() {
             }
         }
     }
-
-
+    io.sockets.emit('send matrix', matrix)
 }
-function draw() {
-
-    for (let y = 0; y < matrix.length; y++) {
-        for (let x = 0; x < matrix[y].length; x++) {
-
-            if (matrix[y][x] == 1) {
-                fill('green')
-            }
-            else if (matrix[y][x] == 2) {
-                fill('yellow')
-            } else if (matrix[y][x] == 3) {
-                fill('red')
-            }
-            else if (matrix[y][x] == 4) {
-                fill('blue')
-            }
-            else {
-                fill('brown')
-            } 
-            rect(x * side, y * side, side, side)
-        }
-    }
+function game (){
     for (let i in grassArr) {
         grassArr[i].mul();
     }
@@ -83,4 +77,11 @@ function draw() {
     for (let i in waterArr) {
         waterArr[i].eat();
     }
+    io.sockets.emit('send matrix', matrix)
 }
+setInterval(game,1000 / 6)
+
+io.on('connection', function(socket){
+    createObject(matrix)
+    io.sockets.emit('send matrix', matrix)
+})
